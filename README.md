@@ -1,0 +1,33 @@
+# advent-of-code
+
+My [Advent of Code](https://adventofcode.com)🢅 solutions.
+
+## 2020
+
+My first Advent of Code.
+
+I'm solving all problems with Rust with a goal of getting right answer as fast as possible.
+
+As I'm still quite a beginner in Rust, I mostly use familiar C-like solutions
+which I can get done faster than what it would take to learn the Rust types/algorithms I should be using instead.
+
+So beware: many solutions are quite terrible! I might rewrite solutions later to use better types/algorithms.
+
+My goal this year is to be among 1000 fastest at least on one day.
+
+```text
+      --------Part 1---------   --------Part 2---------
+Day       Time    Rank  Score       Time    Rank  Score
+ 12   00:16:04    2062      0   00:28:31    1429      0
+ 11   00:25:29    1778      0   00:33:06    1066      0
+ 10   00:09:58    2277      0   00:38:22    1925      0
+  9   00:08:24    1536      0   00:14:35    1217      0
+  8   00:20:18    5340      0   00:30:05    3135      0
+  7   01:30:22    7352      0   01:45:50    5862      0
+  6   00:09:25    3417      0   00:13:57    2209      0
+  5   13:07:27   39552      0   13:16:57   38075      0
+  4       >24h   63875      0       >24h   55721      0
+  3       >24h   75562      0       >24h   73210      0
+  2       >24h   92352      0       >24h   89704      0
+  1       >24h  115325      0       >24h  107932      0
+```
