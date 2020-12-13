@@ -18,6 +18,7 @@ My goal this year is to be among 1000 fastest at least on one day.
 ```text
       --------Part 1---------   --------Part 2---------
 Day       Time    Rank  Score       Time    Rank  Score
+ 13   00:08:08    1090      0   01:02:45    1532      0
  12   00:16:04    2062      0   00:28:31    1429      0
  11   00:25:29    1778      0   00:33:06    1066      0
  10   00:09:58    2277      0   00:38:22    1925      0
