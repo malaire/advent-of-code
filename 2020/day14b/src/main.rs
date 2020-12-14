@@ -16,13 +16,14 @@ fn main() {
 }
 
 fn mem_write(address: u64, value: u64, floating: &[u64], mem: &mut HashMap<u64, u64>) {
-    mem.insert(address, value);
-    if floating.len() != 0 {
-        mem.insert(address ^ floating[0], value);
-        if floating.len() > 1 {
-            mem_write(address, value, &floating[1..], mem);
-            mem_write(address ^ floating[0], value, &floating[1..], mem);
+    if floating.len() < 2 {
+        mem.insert(address, value);
+        if floating.len() == 1 {
+            mem.insert(address ^ floating[0], value);
         }
+    } else {
+        mem_write(address, value, &floating[1..], mem);
+        mem_write(address ^ floating[0], value, &floating[1..], mem);
     }
 }
 
