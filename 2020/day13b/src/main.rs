@@ -22,21 +22,18 @@ fn main() {
 fn solve(input: &str) -> usize {
     let lines: Vec<&str> = input.split("\n").collect();
 
-    let mut base = 0;
-    let mut multiplier = 1;
+    let mut timestamp = 0;
+    let mut step = 1;
 
-    for (delay, id) in lines[1].split(",").enumerate() {
-        if id == "x" {
-            continue;
-        } else {
+    for (offset, id) in lines[1].split(",").enumerate() {
+        if id != "x" {
             let id: usize = id.parse().unwrap();
-            while (base + delay) % id != 0 {
-                base += multiplier;
+            while (timestamp + offset) % id != 0 {
+                timestamp += step;
             }
-            multiplier *= id;
-            // println!("{:4} {:9} {:9}", id, base, multiplier);
+            step *= id;
         }
     }
 
-    base
+    timestamp
 }
