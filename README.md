@@ -13,11 +13,12 @@ which I can get done faster than what it would take to learn the Rust types/algo
 
 So beware: many solutions are quite terrible! I might rewrite solutions later to use better types/algorithms.
 
-My goal this year is to be among 1000 fastest at least on one day.
+My goal this year was to be among 1000 fastest at least on one day - goal was reached on day 17. :)
 
 ```text
       --------Part 1---------   --------Part 2---------
 Day       Time    Rank  Score       Time    Rank  Score
+ 17   00:21:57     669      0   00:26:11     608      0
  16   00:16:58    1495      0   01:15:42    2607      0
  15   00:21:45    2324      0   00:24:15    1292      0
  14   00:22:02    1815      0   00:55:15    2079      0
