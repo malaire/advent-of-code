@@ -97,6 +97,51 @@ impl Orientation {
 }
 
 // ================================================================================
+// SeaMonster
+
+static SEA_MONSTER: &str = "                  #
+#    ##    ##    ###
+ #  #  #  #  #  #";
+
+struct SeaMonster {
+    locations: Vec<(usize, usize)>,
+    rows: usize,
+    cols: usize,
+}
+
+impl SeaMonster {
+    fn new(data: &str) -> Self {
+        let mut locations = Vec::new();
+        let mut max_row = 0;
+        let mut max_col = 0;
+
+        let mut row = 0;
+        for line in data.lines() {
+            let mut col = 0;
+            for ch in line.chars() {
+                if ch == '#' {
+                    locations.push((row, col));
+                }
+                col += 1;
+                if col > max_col {
+                    max_col = col;
+                }
+            }
+            row += 1;
+            if row > max_row {
+                max_row = row;
+            }
+        }
+
+        SeaMonster {
+            locations,
+            rows: max_row + 1,
+            cols: max_col + 1,
+        }
+    }
+}
+
+// ================================================================================
 // ARRAY HELPERS
 
 fn rotate_array_cw<T: Copy>(array: &Array2D<T>) -> Array2D<T> {
@@ -275,29 +320,7 @@ fn solve_1(input: &str) -> usize {
 }
 
 fn solve_2(input: &str) -> usize {
-    // 01234567890123456789
-    //                   #
-    // #    ##    ##    ###
-    //  #  #  #  #  #  #
-    let sea_monster: Vec<(usize, usize)> = vec![
-        (0, 18),
-        (1, 0),
-        (1, 5),
-        (1, 6),
-        (1, 11),
-        (1, 12),
-        (1, 17),
-        (1, 18),
-        (1, 19),
-        (2, 1),
-        (2, 4),
-        (2, 7),
-        (2, 10),
-        (2, 13),
-        (2, 16),
-    ];
-    let sea_monster_rows = 3;
-    let sea_monster_cols = 20;
+    let sea_monster = SeaMonster::new(SEA_MONSTER);
 
     let (tiles, size) = parse_input(input);
     let arrangement = find_arrangement(&tiles, size);
@@ -330,10 +353,10 @@ fn solve_2(input: &str) -> usize {
 
     for image in images {
         let mut sea_monster_count: usize = 0;
-        for row in 0..=(image_size - sea_monster_rows) {
-            for col in 0..=(image_size - sea_monster_cols) {
+        for row in 0..=(image_size - sea_monster.rows) {
+            for col in 0..=(image_size - sea_monster.cols) {
                 let mut monster_found = true;
-                for (row_delta, col_delta) in &sea_monster {
+                for (row_delta, col_delta) in &sea_monster.locations {
                     if !image[(row + row_delta, col + col_delta)] {
                         monster_found = false;
                         break;
@@ -350,7 +373,7 @@ fn solve_2(input: &str) -> usize {
             for item in image.elements_row_major_iter() {
                 roughness += *item as usize;
             }
-            return roughness - sea_monster_count * sea_monster.len();
+            return roughness - sea_monster_count * sea_monster.locations.len();
         }
     }
 
