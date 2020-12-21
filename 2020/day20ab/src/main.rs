@@ -25,6 +25,7 @@ fn main() {
 // Tile
 
 const TILE_SIZE: usize = 10;
+const TILE_SIZE_WITHOUT_BORDERS: usize = TILE_SIZE - 2;
 
 struct Tile {
     id: usize,
@@ -71,7 +72,7 @@ struct Orientation {
 }
 
 impl Orientation {
-    fn new(array: Array2D<bool>) -> Self {
+    fn new(array_with_borders: Array2D<bool>) -> Self {
         fn to_bitvector<'a>(items: &mut impl Iterator<Item = &'a bool>) -> usize {
             let mut bitvector = 0;
             for item in items {
@@ -81,13 +82,25 @@ impl Orientation {
             bitvector
         }
 
-        let top = to_bitvector(&mut array.row_iter(0));
-        let left = to_bitvector(&mut array.column_iter(0));
-        let bottom = to_bitvector(&mut array.row_iter(TILE_SIZE - 1));
-        let right = to_bitvector(&mut array.column_iter(TILE_SIZE - 1));
+        let mut data_without_borders: Vec<bool> =
+            Vec::with_capacity(TILE_SIZE_WITHOUT_BORDERS * TILE_SIZE_WITHOUT_BORDERS);
+        for row in 0..TILE_SIZE_WITHOUT_BORDERS {
+            for col in 0..TILE_SIZE_WITHOUT_BORDERS {
+                data_without_borders.push(array_with_borders[(row + 1, col + 1)]);
+            }
+        }
+
+        let top = to_bitvector(&mut array_with_borders.row_iter(0));
+        let left = to_bitvector(&mut array_with_borders.column_iter(0));
+        let bottom = to_bitvector(&mut array_with_borders.row_iter(TILE_SIZE - 1));
+        let right = to_bitvector(&mut array_with_borders.column_iter(TILE_SIZE - 1));
 
         Orientation {
-            array,
+            array: Array2D::from_row_major(
+                &data_without_borders,
+                TILE_SIZE_WITHOUT_BORDERS,
+                TILE_SIZE_WITHOUT_BORDERS,
+            ),
             top,
             left,
             bottom,
@@ -325,17 +338,20 @@ fn solve_2(input: &str) -> usize {
     let (tiles, size) = parse_input(input);
     let arrangement = find_arrangement(&tiles, size);
 
-    let image_size = size * (TILE_SIZE - 2);
+    let image_size = size * TILE_SIZE_WITHOUT_BORDERS;
     let mut image: Vec<bool> = Vec::with_capacity(image_size * image_size);
     for row in 0..image_size {
         for col in 0..image_size {
-            let row_major = row / (TILE_SIZE - 2);
-            let col_major = col / (TILE_SIZE - 2);
-            let row_minor = row % (TILE_SIZE - 2) + 1;
-            let col_minor = col % (TILE_SIZE - 2) + 1;
-
-            let (t, o) = arrangement[(row_major, col_major)];
-            image.push(tiles[t].orientations[o].array[(row_minor, col_minor)]);
+            let (t, o) = arrangement[(
+                row / TILE_SIZE_WITHOUT_BORDERS,
+                col / TILE_SIZE_WITHOUT_BORDERS,
+            )];
+            image.push(
+                tiles[t].orientations[o].array[(
+                    row % TILE_SIZE_WITHOUT_BORDERS,
+                    col % TILE_SIZE_WITHOUT_BORDERS,
+                )],
+            );
         }
     }
     let image = Array2D::from_row_major(&image, image_size, image_size);
