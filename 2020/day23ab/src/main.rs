@@ -20,20 +20,45 @@ fn main() {
 }
 
 fn solve_1(input: &str, moves: usize) -> usize {
-    let initial_cups = parse_input(input);
-
-    let mut current_cup = initial_cups[0];
-    let mut cups = Ring::new(initial_cups);
+    let (mut current_cup, mut cups) = parse_input(input, false);
 
     for _ in 0..moves {
-        current_cup = cups.move_three(current_cup);
+        current_cup = move_three(&mut cups, current_cup);
     }
 
-    cups.solution_1()
+    let mut solution = 0;
+    let mut cup = cups[0];
+    while cup != 0 {
+        solution *= 10;
+        solution += cup + 1;
+        cup = cups[cup];
+    }
+    solution
 }
 
 fn solve_2(input: &str, moves: usize, fill_to_million: bool) -> usize {
-    let mut initial_cups = parse_input(input);
+    let (mut current_cup, mut cups) = parse_input(input, fill_to_million);
+
+    for _ in 0..moves {
+        current_cup = move_three(&mut cups, current_cup);
+    }
+
+    let a = cups[0];
+    let b = cups[a];
+    (a + 1) * (b + 1)
+}
+
+// ================================================================================
+// HELPERS
+
+// Return `(first_cup, cups)`
+// - `cups` is indexed by cup and contains next cup
+fn parse_input(input: &str, fill_to_million: bool) -> (usize, Vec<usize>) {
+    // normalize cups to start from 0 instead of 1
+    let mut initial_cups: Vec<usize> = input
+        .chars()
+        .map(|ch| (ch as usize) - ('1' as usize))
+        .collect();
 
     if fill_to_million {
         for cup in initial_cups.len()..1_000_000 {
@@ -41,94 +66,47 @@ fn solve_2(input: &str, moves: usize, fill_to_million: bool) -> usize {
         }
     }
 
-    let mut current_cup = initial_cups[0];
-    let mut cups = Ring::new(initial_cups);
+    let len = initial_cups.len();
+    let mut cups = vec![0; len];
 
-    for _ in 0..moves {
-        current_cup = cups.move_three(current_cup);
-    }
-
-    cups.solution_2()
-}
-
-// ================================================================================
-// HELPERS
-
-fn parse_input(input: &str) -> Vec<usize> {
-    // normalize cups to start from 0 instead of 1
-    input
-        .chars()
-        .map(|ch| (ch as usize) - ('1' as usize))
-        .collect()
-}
-// ================================================================================
-// Ring
-
-struct Ring {
-    // indexed by cup
-    next_cup: Vec<usize>,
-}
-
-impl Ring {
-    fn new(cups: Vec<usize>) -> Self {
-        let len = cups.len();
-        let mut next_cup = vec![0; len];
-
-        let first_cup = cups[0];
-        let mut prev_cup = None;
-        for cup in &cups {
-            if let Some(prev_cup) = prev_cup {
-                next_cup[prev_cup] = *cup;
-            }
-            prev_cup = Some(*cup);
+    let first_cup = initial_cups[0];
+    let mut prev_cup = None;
+    for cup in &initial_cups {
+        if let Some(prev_cup) = prev_cup {
+            cups[prev_cup] = *cup;
         }
-        next_cup[prev_cup.unwrap()] = first_cup;
-        Ring { next_cup }
+        prev_cup = Some(*cup);
     }
+    cups[prev_cup.unwrap()] = first_cup;
 
-    // O(1)
-    fn move_three(&mut self, current_cup: usize) -> usize {
-        let a_cup = self.next_cup[current_cup];
-        let b_cup = self.next_cup[a_cup];
-        let c_cup = self.next_cup[b_cup];
-        let next_current_cup = self.next_cup[c_cup];
+    (first_cup, cups)
+}
 
-        let len = self.next_cup.len();
+// O(1)
+fn move_three(cups: &mut Vec<usize>, current_cup: usize) -> usize {
+    let a_cup = cups[current_cup];
+    let b_cup = cups[a_cup];
+    let c_cup = cups[b_cup];
+    let next_current_cup = cups[c_cup];
 
-        let mut destination_cup = if current_cup == 0 {
-            len - 1
+    let len = cups.len();
+
+    let mut destination_cup = if current_cup == 0 {
+        len - 1
+    } else {
+        current_cup - 1
+    };
+    while destination_cup == a_cup || destination_cup == b_cup || destination_cup == c_cup {
+        if destination_cup == 0 {
+            destination_cup = len - 1;
         } else {
-            current_cup - 1
-        };
-        while destination_cup == a_cup || destination_cup == b_cup || destination_cup == c_cup {
-            if destination_cup == 0 {
-                destination_cup = len - 1;
-            } else {
-                destination_cup -= 1;
-            }
+            destination_cup -= 1;
         }
-
-        self.next_cup[current_cup] = next_current_cup;
-        self.next_cup[c_cup] = self.next_cup[destination_cup];
-        self.next_cup[destination_cup] = a_cup;
-
-        next_current_cup
     }
 
-    fn solution_1(&self) -> usize {
-        let mut solution = 0;
-        let mut cup = self.next_cup[0];
-        while cup != 0 {
-            solution *= 10;
-            solution += cup + 1;
-            cup = self.next_cup[cup];
-        }
-        solution
-    }
+    cups[current_cup] = next_current_cup;
+    cups[c_cup] = cups[destination_cup];
+    cups[destination_cup] = a_cup;
 
-    fn solution_2(&self) -> usize {
-        let a = self.next_cup[0];
-        let b = self.next_cup[a];
-        (a + 1) * (b + 1)
-    }
+    next_current_cup
 }
