@@ -36,7 +36,7 @@ fn solve_2(input: &str, moves: usize, fill_to_million: bool) -> usize {
     let mut initial_cups = parse_input(input);
 
     if fill_to_million {
-        for cup in (initial_cups.len() + 1)..=1_000_000 {
+        for cup in initial_cups.len()..1_000_000 {
             initial_cups.push(cup);
         }
     }
@@ -55,96 +55,80 @@ fn solve_2(input: &str, moves: usize, fill_to_million: bool) -> usize {
 // HELPERS
 
 fn parse_input(input: &str) -> Vec<usize> {
+    // normalize cups to start from 0 instead of 1
     input
         .chars()
-        .map(|ch| (ch as usize) - ('0' as usize))
+        .map(|ch| (ch as usize) - ('1' as usize))
         .collect()
 }
 // ================================================================================
 // Ring
 
-struct Node {
-    cup: usize,
-    next_pos: usize,
-}
-
 struct Ring {
-    len: usize,
-    nodes: Vec<Node>,
-    // positions[cup] is position of the node which contains cup
-    positions: Vec<usize>,
+    // indexed by cup
+    next_cup: Vec<usize>,
 }
 
 impl Ring {
     fn new(cups: Vec<usize>) -> Self {
         let len = cups.len();
-        let mut nodes = Vec::with_capacity(len);
-        let mut positions = vec![0; len + 1];
+        let mut next_cup = vec![0; len];
 
-        for (pos, cup) in cups.into_iter().enumerate() {
-            nodes.push(Node {
-                cup,
-                next_pos: (pos + 1) % len,
-            });
-            positions[cup] = pos;
+        let first_cup = cups[0];
+        let mut prev_cup = None;
+        for cup in &cups {
+            if let Some(prev_cup) = prev_cup {
+                next_cup[prev_cup] = *cup;
+            }
+            prev_cup = Some(*cup);
         }
-        Ring {
-            len,
-            nodes,
-            positions,
-        }
+        next_cup[prev_cup.unwrap()] = first_cup;
+        Ring { next_cup }
     }
 
     // O(1)
     fn move_three(&mut self, current_cup: usize) -> usize {
-        let current_pos = self.positions[current_cup];
+        let a_cup = self.next_cup[current_cup];
+        let b_cup = self.next_cup[a_cup];
+        let c_cup = self.next_cup[b_cup];
+        let next_current_cup = self.next_cup[c_cup];
 
-        let current = &self.nodes[current_pos];
-        let a_pos = current.next_pos;
-        let a = &self.nodes[a_pos];
-        let b = &self.nodes[a.next_pos];
-        let c_pos = b.next_pos;
-        let c = &self.nodes[c_pos];
+        let len = self.next_cup.len();
 
-        let mut destination_cup = if current_cup == 1 {
-            self.len
+        let mut destination_cup = if current_cup == 0 {
+            len - 1
         } else {
             current_cup - 1
         };
-        while destination_cup == a.cup || destination_cup == b.cup || destination_cup == c.cup {
-            if destination_cup == 1 {
-                destination_cup = self.len;
+        while destination_cup == a_cup || destination_cup == b_cup || destination_cup == c_cup {
+            if destination_cup == 0 {
+                destination_cup = len - 1;
             } else {
                 destination_cup -= 1;
             }
         }
 
-        let destination_pos = self.positions[destination_cup];
-
-        let next_current_cup = self.nodes[c.next_pos].cup;
-
-        self.nodes[current_pos].next_pos = c.next_pos;
-        self.nodes[c_pos].next_pos = self.nodes[destination_pos].next_pos;
-        self.nodes[destination_pos].next_pos = a_pos;
+        self.next_cup[current_cup] = next_current_cup;
+        self.next_cup[c_cup] = self.next_cup[destination_cup];
+        self.next_cup[destination_cup] = a_cup;
 
         next_current_cup
     }
 
     fn solution_1(&self) -> usize {
         let mut solution = 0;
-        let mut pos = self.positions[1];
-        for _ in 0..(self.len - 1) {
-            pos = self.nodes[pos].next_pos;
+        let mut cup = self.next_cup[0];
+        while cup != 0 {
             solution *= 10;
-            solution += self.nodes[pos].cup;
+            solution += cup + 1;
+            cup = self.next_cup[cup];
         }
         solution
     }
 
     fn solution_2(&self) -> usize {
-        let pos_1 = &self.nodes[self.positions[1]];
-        let a = &self.nodes[pos_1.next_pos];
-        let b = &self.nodes[a.next_pos];
-        a.cup * b.cup
+        let a = self.next_cup[0];
+        let b = self.next_cup[a];
+        (a + 1) * (b + 1)
     }
 }
