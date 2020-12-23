@@ -19,7 +19,7 @@ fn main() {
     println!("{:?}", solve_2(INPUT_X, 10_000_000, true));
 }
 
-fn solve_1(input: &str, moves: usize) -> usize {
+fn solve_1(input: &str, moves: u32) -> u32 {
     let (first, mut cups) = parse_input(input, false);
 
     play_game(&mut cups, first, moves);
@@ -29,18 +29,18 @@ fn solve_1(input: &str, moves: usize) -> usize {
     while cup != 0 {
         solution *= 10;
         solution += cup + 1;
-        cup = cups[cup];
+        cup = cups[cup as usize];
     }
     solution
 }
 
-fn solve_2(input: &str, moves: usize, fill_to_million: bool) -> usize {
+fn solve_2(input: &str, moves: u32, fill_to_million: bool) -> u64 {
     let (first, mut cups) = parse_input(input, fill_to_million);
 
     play_game(&mut cups, first, moves);
 
-    let a = cups[0];
-    let b = cups[a];
+    let a = cups[0] as u64;
+    let b = cups[a as usize] as u64;
     (a + 1) * (b + 1)
 }
 
@@ -50,15 +50,12 @@ fn solve_2(input: &str, moves: usize, fill_to_million: bool) -> usize {
 // Return `(first_cup, cups)`
 // - `cups` is indexed by cup and contains next cup
 // - normalizes cups to start from 0 instead of 1
-fn parse_input(input: &str, fill_to_million: bool) -> (usize, Vec<usize>) {
-    let mut initial_cups: Vec<usize> = input
-        .chars()
-        .map(|ch| (ch as usize) - ('1' as usize))
-        .collect();
+fn parse_input(input: &str, fill_to_million: bool) -> (u32, Vec<u32>) {
+    let mut initial_cups: Vec<u32> = input.chars().map(|ch| (ch as u32) - ('1' as u32)).collect();
 
     if fill_to_million {
         for cup in initial_cups.len()..1_000_000 {
-            initial_cups.push(cup);
+            initial_cups.push(cup as u32);
         }
     }
 
@@ -68,23 +65,23 @@ fn parse_input(input: &str, fill_to_million: bool) -> (usize, Vec<usize>) {
     let mut prev = None;
     for cup in &initial_cups {
         if let Some(prev) = prev {
-            cups[prev] = *cup;
+            cups[prev as usize] = *cup;
         }
         prev = Some(*cup);
     }
-    cups[prev.unwrap()] = first;
+    cups[prev.unwrap() as usize] = first;
 
     (first, cups)
 }
 
-fn play_game(cups: &mut Vec<usize>, mut current: usize, moves: usize) {
-    let cup_count = cups.len();
+fn play_game(cups: &mut Vec<u32>, mut current: u32, moves: u32) {
+    let cup_count = cups.len() as u32;
 
     for _ in 0..moves {
-        let a = cups[current];
-        let b = cups[a];
-        let c = cups[b];
-        let next_current = cups[c];
+        let a = cups[current as usize];
+        let b = cups[a as usize];
+        let c = cups[b as usize];
+        let next_current = cups[c as usize];
 
         let mut destination = if current == 0 {
             cup_count - 1
@@ -99,9 +96,9 @@ fn play_game(cups: &mut Vec<usize>, mut current: usize, moves: usize) {
             }
         }
 
-        cups[current] = next_current;
-        cups[c] = cups[destination];
-        cups[destination] = a;
+        cups[current as usize] = next_current;
+        cups[c as usize] = cups[destination as usize];
+        cups[destination as usize] = a;
 
         current = next_current
     }
