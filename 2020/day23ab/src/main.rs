@@ -20,11 +20,9 @@ fn main() {
 }
 
 fn solve_1(input: &str, moves: usize) -> usize {
-    let (mut current_cup, mut cups) = parse_input(input, false);
+    let (first_current_cup, mut cups) = parse_input(input, false);
 
-    for _ in 0..moves {
-        current_cup = move_three(&mut cups, current_cup);
-    }
+    play_game(&mut cups, first_current_cup, moves);
 
     let mut solution = 0;
     let mut cup = cups[0];
@@ -37,11 +35,9 @@ fn solve_1(input: &str, moves: usize) -> usize {
 }
 
 fn solve_2(input: &str, moves: usize, fill_to_million: bool) -> usize {
-    let (mut current_cup, mut cups) = parse_input(input, fill_to_million);
+    let (first_current_cup, mut cups) = parse_input(input, fill_to_million);
 
-    for _ in 0..moves {
-        current_cup = move_three(&mut cups, current_cup);
-    }
+    play_game(&mut cups, first_current_cup, moves);
 
     let a = cups[0];
     let b = cups[a];
@@ -82,31 +78,32 @@ fn parse_input(input: &str, fill_to_million: bool) -> (usize, Vec<usize>) {
     (first_cup, cups)
 }
 
-// O(1)
-fn move_three(cups: &mut Vec<usize>, current_cup: usize) -> usize {
-    let a_cup = cups[current_cup];
-    let b_cup = cups[a_cup];
-    let c_cup = cups[b_cup];
-    let next_current_cup = cups[c_cup];
+fn play_game(cups: &mut Vec<usize>, mut current_cup: usize, moves: usize) {
+    for _ in 0..moves {
+        let a_cup = cups[current_cup];
+        let b_cup = cups[a_cup];
+        let c_cup = cups[b_cup];
+        let next_current_cup = cups[c_cup];
 
-    let len = cups.len();
+        let len = cups.len();
 
-    let mut destination_cup = if current_cup == 0 {
-        len - 1
-    } else {
-        current_cup - 1
-    };
-    while destination_cup == a_cup || destination_cup == b_cup || destination_cup == c_cup {
-        if destination_cup == 0 {
-            destination_cup = len - 1;
+        let mut destination_cup = if current_cup == 0 {
+            len - 1
         } else {
-            destination_cup -= 1;
+            current_cup - 1
+        };
+        while destination_cup == a_cup || destination_cup == b_cup || destination_cup == c_cup {
+            if destination_cup == 0 {
+                destination_cup = len - 1;
+            } else {
+                destination_cup -= 1;
+            }
         }
+
+        cups[current_cup] = next_current_cup;
+        cups[c_cup] = cups[destination_cup];
+        cups[destination_cup] = a_cup;
+
+        current_cup = next_current_cup
     }
-
-    cups[current_cup] = next_current_cup;
-    cups[c_cup] = cups[destination_cup];
-    cups[destination_cup] = a_cup;
-
-    next_current_cup
 }
