@@ -1,6 +1,7 @@
-use array2d::Array2D;
 use regex::Regex;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+
+use malaire_aoc::array2d::{Array2D, Vec2D, View};
 
 static INPUT_A: &str = include_str!("input_a");
 static INPUT_X: &str = include_str!("input");
@@ -21,83 +22,52 @@ fn main() {
     println!("{:?}", solve_2(INPUT_X));
 }
 
-// ================================================================================
-// Tile
-
 const TILE_SIZE: usize = 10;
 const TILE_SIZE_WITHOUT_BORDERS: usize = TILE_SIZE - 2;
 
-struct Tile {
-    id: usize,
-    orientations: Vec<Orientation>,
-}
+// ================================================================================
+// BitVector
 
-impl Tile {
-    fn new(id: usize, data: &Vec<bool>) -> Self {
-        let array = Array2D::from_row_major(&data, TILE_SIZE, TILE_SIZE);
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+struct BitVector(u16);
 
-        let a0 = array;
-        let a1 = rotate_array_cw(&a0);
-        let a2 = rotate_array_cw(&a1);
-        let a3 = rotate_array_cw(&a2);
-        let b0 = flip_array(&a0);
-        let b1 = rotate_array_cw(&b0);
-        let b2 = rotate_array_cw(&b1);
-        let b3 = rotate_array_cw(&b2);
-
-        let orientations = vec![
-            Orientation::new(a0),
-            Orientation::new(a1),
-            Orientation::new(a2),
-            Orientation::new(a3),
-            Orientation::new(b0),
-            Orientation::new(b1),
-            Orientation::new(b2),
-            Orientation::new(b3),
-        ];
-
-        Tile { id, orientations }
+impl BitVector {
+    fn new<'a>(items: &mut impl Iterator<Item = &'a bool>) -> Self {
+        let mut bitvector = 0;
+        for item in items {
+            bitvector *= 2;
+            if *item {
+                bitvector += 1
+            }
+        }
+        BitVector(bitvector)
     }
 }
 
 // ================================================================================
 // Orientation
 
-struct Orientation {
-    array: Array2D<bool>,
-    top: usize,
-    left: usize,
-    bottom: usize,
-    right: usize,
+struct Orientation<'a> {
+    id: usize,
+    view: View<'a, Vec2D<bool>>,
+    top: BitVector,
+    left: BitVector,
+    bottom: BitVector,
+    right: BitVector,
 }
 
-impl Orientation {
-    fn new(array_with_borders: Array2D<bool>) -> Self {
-        fn to_bitvector<'a>(items: &mut impl Iterator<Item = &'a bool>) -> usize {
-            let mut bitvector = 0;
-            for item in items {
-                bitvector *= 2;
-                bitvector += *item as usize;
-            }
-            bitvector
-        }
-
-        let mut data_without_borders: Vec<bool> =
-            Vec::with_capacity(TILE_SIZE_WITHOUT_BORDERS * TILE_SIZE_WITHOUT_BORDERS);
-        for row in 0..TILE_SIZE_WITHOUT_BORDERS {
-            for col in 0..TILE_SIZE_WITHOUT_BORDERS {
-                data_without_borders.push(array_with_borders[(row + 1, col + 1)]);
-            }
-        }
-
-        let top = to_bitvector(&mut array_with_borders.row_iter(0));
-        let left = to_bitvector(&mut array_with_borders.column_iter(0));
-        let bottom = to_bitvector(&mut array_with_borders.row_iter(TILE_SIZE - 1));
-        let right = to_bitvector(&mut array_with_borders.column_iter(TILE_SIZE - 1));
+impl<'a> Orientation<'a> {
+    fn new(id: usize, view_with_borders: View<'a, Vec2D<bool>>) -> Self {
+        let top = BitVector::new(&mut view_with_borders.row(0));
+        let left = BitVector::new(&mut view_with_borders.col(0));
+        let bottom = BitVector::new(&mut view_with_borders.row(TILE_SIZE - 1));
+        let right = BitVector::new(&mut view_with_borders.col(TILE_SIZE - 1));
 
         Orientation {
-            array: Array2D::from_row_major(
-                &data_without_borders,
+            id,
+            view: view_with_borders.window(
+                1,
+                1,
                 TILE_SIZE_WITHOUT_BORDERS,
                 TILE_SIZE_WITHOUT_BORDERS,
             ),
@@ -155,138 +125,157 @@ impl SeaMonster {
 }
 
 // ================================================================================
-// ARRAY HELPERS
-
-fn rotate_array_cw<T: Copy>(array: &Array2D<T>) -> Array2D<T> {
-    let mut data = Vec::with_capacity(array.num_elements());
-    for row in 0..array.num_columns() {
-        for col in 0..array.num_rows() {
-            data.push(array[(array.num_rows() - 1 - col, row)]);
-        }
-    }
-    Array2D::from_row_major(&data, array.num_columns(), array.num_rows())
-}
-
-// row/col flipped
-fn flip_array<T: Copy>(array: &Array2D<T>) -> Array2D<T> {
-    Array2D::from_iter_column_major(
-        array.elements_row_major_iter().cloned(),
-        array.num_columns(),
-        array.num_rows(),
-    )
-}
-
-// ================================================================================
 // MAJOR FUNCTIONS
 
-fn parse_input(input: &str) -> (Vec<Tile>, usize) {
+fn parse_input(input: &str) -> Vec<(usize, Vec2D<bool>)> {
     let re_id = Regex::new(r"^Tile (\d+):$").unwrap();
 
-    let mut tiles: Vec<Tile> = Vec::new();
+    let mut tiles_data = Vec::new();
 
     let mut id = None;
-    let mut data = Vec::with_capacity(TILE_SIZE * TILE_SIZE);
+    let mut data = None;
     for line in input.lines() {
         if let Some(cap) = re_id.captures(line) {
             id = Some(cap[1].parse::<usize>().unwrap());
-            data.clear();
+            data = Some(Vec::with_capacity(TILE_SIZE * TILE_SIZE));
         } else if line != "" {
             for ch in line.chars() {
-                data.push(ch == '#');
+                data.as_mut().unwrap().push(ch == '#');
             }
         } else {
-            tiles.push(Tile::new(id.unwrap(), &data));
+            let array = Vec2D::from_row_major(data.take().unwrap(), TILE_SIZE, TILE_SIZE);
+            tiles_data.push((id.unwrap(), array));
         }
     }
-    tiles.push(Tile::new(id.unwrap(), &data));
+    let array: Vec2D<bool> = Vec2D::from_row_major(data.take().unwrap(), TILE_SIZE, TILE_SIZE);
+    tiles_data.push((id.unwrap(), array));
+
+    tiles_data
+}
+
+fn get_orientations<'a>(
+    tiles_data: &'a Vec<(usize, Vec2D<bool>)>,
+) -> (Vec<Orientation<'a>>, usize) {
+    let mut orientations = Vec::new();
+    let mut tile_count = 0;
+
+    for (id, array) in tiles_data {
+        let v0 = array.view();
+        let v1 = v0.clone().cw(90);
+        let v2 = v1.clone().cw(90);
+        let v3 = v2.clone().cw(90);
+        let v4 = v0.clone().transpose();
+        let v5 = v4.clone().cw(90);
+        let v6 = v5.clone().cw(90);
+        let v7 = v6.clone().cw(90);
+
+        orientations.push(Orientation::new(*id, v0));
+        orientations.push(Orientation::new(*id, v1));
+        orientations.push(Orientation::new(*id, v2));
+        orientations.push(Orientation::new(*id, v3));
+        orientations.push(Orientation::new(*id, v4));
+        orientations.push(Orientation::new(*id, v5));
+        orientations.push(Orientation::new(*id, v6));
+        orientations.push(Orientation::new(*id, v7));
+
+        tile_count += 1;
+    }
 
     let mut size = 1;
-    while size * size < tiles.len() {
+    while size * size < tile_count {
         size += 1;
     }
-    if tiles.len() != size * size {
+    if tile_count != size * size {
         panic!("n*n tiles required");
     }
 
-    (tiles, size)
+    (orientations, size)
 }
 
-// <usize, usize> = tile position in tiles ; its orientation
-fn find_arrangement(tiles: &Vec<Tile>, size: usize) -> Array2D<(usize, usize)> {
-    const ORIENTATION_COUNT: usize = 8;
+fn find_arrangement<'a>(
+    orientations: &'a Vec<Orientation<'a>>,
+    size: usize,
+) -> Vec2D<&'a Orientation> {
+    // [(top, left)] = matching orientations
+    let mut possible_orientations: HashMap<
+        (Option<BitVector>, Option<BitVector>),
+        Vec<&Orientation>,
+    > = HashMap::new();
+    for orientation in orientations.iter() {
+        let top = orientation.top;
+        let left = orientation.left;
 
-    fn next_t_o(t: usize, o: usize) -> (usize, usize) {
-        if o < ORIENTATION_COUNT - 1 {
-            (t, o + 1)
-        } else {
-            (t + 1, 0)
+        for key in vec![
+            (None, None),
+            (None, Some(left)),
+            (Some(top), None),
+            (Some(top), Some(left)),
+        ] {
+            possible_orientations
+                .entry(key)
+                .or_insert(Vec::new())
+                .push(orientation);
         }
     }
 
-    let mut arrangement: Array2D<Option<(usize, usize)>> = Array2D::filled_with(None, size, size);
+    // possible orientations of each position, with index of currently selected one
+    let mut arrangement: Vec2D<Option<(usize, &Vec<&Orientation>)>> =
+        Vec2D::repeat_item(None, size, size);
     let mut used_tiles: HashSet<usize> = HashSet::new();
     let mut row = 0;
     let mut col = 0;
 
     loop {
-        let top = if row == 0 {
-            None
-        } else {
-            let (t, o) = arrangement[(row - 1, col)].unwrap();
-            Some(tiles[t].orientations[o].bottom)
-        };
+        let backtrack;
+        if let Some((mut selected, possible)) = arrangement[(row, col)] {
+            let prev_selected = selected;
+            while selected < possible.len() && used_tiles.contains(&possible[selected].id) {
+                selected += 1;
+            }
+            used_tiles.remove(&possible[prev_selected].id);
 
-        let left = if col == 0 {
-            None
-        } else {
-            let (t, o) = arrangement[(row, col - 1)].unwrap();
-            Some(tiles[t].orientations[o].right)
-        };
-
-        // FIND FITTING TILE
-
-        let (mut t, mut o) = match arrangement[(row, col)] {
-            None => (0, 0),
-            Some((tt, oo)) => next_t_o(tt, oo),
-        };
-        let mut backtrack = t == size * size;
-        while !backtrack {
-            let mut ok = true;
-            if used_tiles.contains(&t) {
-                ok = false;
+            if selected < possible.len() {
+                arrangement[(row, col)].as_mut().unwrap().0 = selected;
+                used_tiles.insert(possible[selected].id);
+                backtrack = false;
             } else {
-                let orientation = &tiles[t].orientations[o];
-                if let Some(top) = top {
-                    if top != orientation.top {
-                        ok = false;
+                arrangement[(row, col)] = None;
+                backtrack = true;
+            }
+        } else {
+            let top = if row == 0 {
+                None
+            } else {
+                let (selected, possible) = arrangement[(row - 1, col)].unwrap();
+                Some(possible[selected].bottom)
+            };
+
+            let left = if col == 0 {
+                None
+            } else {
+                let (selected, possible) = arrangement[(row, col - 1)].unwrap();
+                Some(possible[selected].right)
+            };
+
+            match &possible_orientations.get(&(top, left)) {
+                Some(possible) => {
+                    let mut selected = 0;
+                    while selected < possible.len() && used_tiles.contains(&possible[selected].id) {
+                        selected += 1;
+                    }
+                    if selected < possible.len() {
+                        arrangement[(row, col)] = Some((selected, possible));
+                        used_tiles.insert(possible[selected].id);
+                        backtrack = false;
+                    } else {
+                        backtrack = true;
                     }
                 }
-                if let Some(left) = left {
-                    if left != orientation.left {
-                        ok = false;
-                    }
-                }
+                None => backtrack = true,
             }
-
-            if ok {
-                break;
-            } else {
-                let (tt, oo) = next_t_o(t, o);
-                t = tt;
-                o = oo;
-
-                if t == size * size {
-                    backtrack = true;
-                }
-            }
-        }
-
-        if let Some((t, _)) = arrangement[(row, col)] {
-            used_tiles.remove(&t);
         }
 
         if backtrack {
-            arrangement[(row, col)] = None;
             if col > 0 {
                 col -= 1;
             } else if row > 0 {
@@ -296,9 +285,6 @@ fn find_arrangement(tiles: &Vec<Tile>, size: usize) -> Array2D<(usize, usize)> {
                 panic!("NO SOLUTION FOUND");
             }
         } else {
-            arrangement[(row, col)] = Some((t, o));
-            used_tiles.insert(t);
-
             if col < size - 1 {
                 col += 1;
             } else if row < size - 1 {
@@ -310,8 +296,11 @@ fn find_arrangement(tiles: &Vec<Tile>, size: usize) -> Array2D<(usize, usize)> {
         }
     }
 
-    Array2D::from_iter_row_major(
-        arrangement.elements_row_major_iter().map(|x| x.unwrap()),
+    Vec2D::from_row_major(
+        arrangement.row_major().map(|a| {
+            let (selected, possible) = a.unwrap();
+            possible[selected]
+        }),
         size,
         size,
     )
@@ -321,54 +310,55 @@ fn find_arrangement(tiles: &Vec<Tile>, size: usize) -> Array2D<(usize, usize)> {
 // SOLVE
 
 fn solve_1(input: &str) -> usize {
-    let (tiles, size) = parse_input(input);
-    let arrangement = find_arrangement(&tiles, size);
+    let tiles_data = parse_input(input);
+    let (orientations, size) = get_orientations(&tiles_data);
+    let arrangement = find_arrangement(&orientations, size);
 
     let a = arrangement[(0, 0)];
     let b = arrangement[(size - 1, 0)];
     let c = arrangement[(0, size - 1)];
     let d = arrangement[(size - 1, size - 1)];
 
-    tiles[a.0].id * tiles[b.0].id * tiles[c.0].id * tiles[d.0].id
+    a.id * b.id * c.id * d.id
 }
 
 fn solve_2(input: &str) -> usize {
     let sea_monster = SeaMonster::new(SEA_MONSTER);
 
-    let (tiles, size) = parse_input(input);
-    let arrangement = find_arrangement(&tiles, size);
+    let tiles_data = parse_input(input);
+    let (orientations, size) = get_orientations(&tiles_data);
+    let arrangement = find_arrangement(&orientations, size);
 
     let image_size = size * TILE_SIZE_WITHOUT_BORDERS;
     let mut image: Vec<bool> = Vec::with_capacity(image_size * image_size);
     for row in 0..image_size {
         for col in 0..image_size {
-            let (t, o) = arrangement[(
-                row / TILE_SIZE_WITHOUT_BORDERS,
-                col / TILE_SIZE_WITHOUT_BORDERS,
-            )];
             image.push(
-                tiles[t].orientations[o].array[(
+                arrangement[(
+                    row / TILE_SIZE_WITHOUT_BORDERS,
+                    col / TILE_SIZE_WITHOUT_BORDERS,
+                )]
+                    .view[(
                     row % TILE_SIZE_WITHOUT_BORDERS,
                     col % TILE_SIZE_WITHOUT_BORDERS,
                 )],
             );
         }
     }
-    let image = Array2D::from_row_major(&image, image_size, image_size);
+    let image = Vec2D::from_row_major(image, image_size, image_size);
 
-    let a0 = image;
-    let a1 = rotate_array_cw(&a0);
-    let a2 = rotate_array_cw(&a1);
-    let a3 = rotate_array_cw(&a2);
-    let b0 = flip_array(&a0);
-    let b1 = rotate_array_cw(&b0);
-    let b2 = rotate_array_cw(&b1);
-    let b3 = rotate_array_cw(&b2);
-
-    let images = vec![a0, a1, a2, a3, b0, b1, b2, b3];
+    let v0 = image.view();
+    let v1 = v0.clone().cw(90);
+    let v2 = v1.clone().cw(90);
+    let v3 = v2.clone().cw(90);
+    let v4 = v0.clone().transpose();
+    let v5 = v4.clone().cw(90);
+    let v6 = v5.clone().cw(90);
+    let v7 = v6.clone().cw(90);
+    let images = vec![v0, v1, v2, v3, v4, v5, v6, v7];
 
     for image in images {
-        let mut sea_monster_count: usize = 0;
+        let mut monster_count: usize = 0;
         for row in 0..=(image_size - sea_monster.rows) {
             for col in 0..=(image_size - sea_monster.cols) {
                 let mut monster_found = true;
@@ -379,19 +369,15 @@ fn solve_2(input: &str) -> usize {
                     }
                 }
                 if monster_found {
-                    sea_monster_count += 1;
+                    monster_count += 1;
                 }
             }
         }
 
-        if sea_monster_count > 0 {
-            let mut roughness: usize = 0;
-            for item in image.elements_row_major_iter() {
-                roughness += *item as usize;
-            }
-            return roughness - sea_monster_count * sea_monster.locations.len();
+        if monster_count > 0 {
+            return image.row_major().filter(|b| **b).count()
+                - monster_count * sea_monster.locations.len();
         }
     }
-
-    panic!();
+    panic!("No monsters found");
 }
