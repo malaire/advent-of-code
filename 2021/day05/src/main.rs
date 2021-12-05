@@ -27,45 +27,14 @@ fn main() {
 }
 
 fn solve(input: &str) -> usize {
-    let re = Regex::new(r"(?m)^(\d+),(\d+) -> (\d+),(\d+)$").unwrap();
-
-    let mut counts: HashMap<(isize, isize), usize> = HashMap::new();
-
-    for cap in re.captures_iter(input) {
-        let x1: isize = cap[1].parse().unwrap();
-        let y1: isize = cap[2].parse().unwrap();
-        let x2: isize = cap[3].parse().unwrap();
-        let y2: isize = cap[4].parse().unwrap();
-
-        if x1 == x2 {
-            let dy = (y2 - y1).signum();
-            let mut y = y1;
-            loop {
-                *counts.entry((x1, y)).or_insert(0) += 1;
-                if y == y2 {
-                    break;
-                }
-                y += dy;
-            }
-        }
-
-        if y1 == y2 {
-            let dx = (x2 - x1).signum();
-            let mut x = x1;
-            loop {
-                *counts.entry((x, y1)).or_insert(0) += 1;
-                if x == x2 {
-                    break;
-                }
-                x += dx;
-            }
-        }
-    }
-
-    counts.values().filter(|n| **n > 1).count()
+    solve_general(input, true)
 }
 
 fn solve_2(input: &str) -> usize {
+    solve_general(input, false)
+}
+
+fn solve_general(input: &str, ignore_diagonals: bool) -> usize {
     let re = Regex::new(r"(?m)^(\d+),(\d+) -> (\d+),(\d+)$").unwrap();
 
     let mut counts: HashMap<(isize, isize), usize> = HashMap::new();
@@ -78,6 +47,10 @@ fn solve_2(input: &str) -> usize {
 
         let dx = (x2 - x1).signum();
         let dy = (y2 - y1).signum();
+
+        if ignore_diagonals && dx != 0 && dy != 0 {
+            continue;
+        }
 
         let mut x = x1;
         let mut y = y1;
