@@ -29,17 +29,8 @@ fn solve(input: &str) -> usize {
         }
     }
 
-    let mut gamma = 0;
-    let mut epsilon = 0;
-    for pos in 0..size {
-        gamma <<= 1;
-        epsilon <<= 1;
-        if counts[pos].1 > counts[pos].0 {
-            gamma += 1;
-        } else {
-            epsilon += 1;
-        }
-    }
+    let gamma = usize_from_bits_fn_be(size, |n| counts[n].1 > counts[n].0);
+    let epsilon = usize_from_bits_fn_be(size, |n| counts[n].1 < counts[n].0);
 
     gamma * epsilon
 }
@@ -86,10 +77,28 @@ fn filter(input: &[&str], find_oxygen: bool) -> usize {
         pos += 1;
     }
 
+    usize_from_bits_be(&input[0], b'1')
+}
+
+// ======================================================================
+// UTIL
+
+fn usize_from_bits_be<T: std::cmp::PartialEq, S: AsRef<[T]>>(bits: S, bit_one: T) -> usize {
     let mut x = 0;
-    for ch in input[0].chars() {
+    for bit in bits.as_ref() {
         x <<= 1;
-        if ch == '1' {
+        if *bit == bit_one {
+            x += 1;
+        }
+    }
+    x
+}
+
+fn usize_from_bits_fn_be<F: Fn(usize) -> bool>(count: usize, is_one: F) -> usize {
+    let mut x = 0;
+    for index in 0..count {
+        x <<= 1;
+        if is_one(index) {
             x += 1;
         }
     }
