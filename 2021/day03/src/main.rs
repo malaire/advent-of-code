@@ -41,43 +41,40 @@ fn solve_2(input: &str) -> usize {
     filter(&lines, true) * filter(&lines, false)
 }
 
-fn filter(input: &[&str], find_oxygen: bool) -> usize {
-    let mut input = input.to_vec();
-    let mut filtered = Vec::new();
+fn filter(numbers: &[&str], find_oxygen: bool) -> usize {
+    let mut numbers = numbers.to_vec();
 
     let mut pos = 0;
-    while input.len() > 1 {
-        let mut count0 = 0;
-        let mut count1 = 0;
+    while numbers.len() > 1 {
+        let mut split: [Vec<_>; 2] = [Vec::new(), Vec::new()];
 
-        for line in input.iter() {
-            if line.as_bytes()[pos] == b'0' {
-                count0 += 1;
-            } else {
-                count1 += 1;
-            }
+        for number in numbers.iter() {
+            let bit = if number.as_bytes()[pos] == b'0' { 0 } else { 1 };
+            split[bit].push(number.clone());
         }
 
-        for line in input.iter() {
-            let byte = line.as_bytes()[pos];
+        let count0 = split[0].len();
+        let count1 = split[1].len();
 
-            if find_oxygen {
-                if (count0 > count1 && byte == b'0') || (count1 >= count0 && byte == b'1') {
-                    filtered.push(line.clone());
-                }
+        let wanted_bit = if find_oxygen {
+            if count0 > count1 {
+                0
             } else {
-                if (count0 <= count1 && byte == b'0') || (count1 < count0 && byte == b'1') {
-                    filtered.push(line.clone());
-                }
+                1
             }
-        }
+        } else {
+            if count0 <= count1 {
+                0
+            } else {
+                1
+            }
+        };
 
-        input = filtered;
-        filtered = Vec::new();
+        numbers = split[wanted_bit].clone();
         pos += 1;
     }
 
-    usize_from_bits_be(&input[0], b'1')
+    usize_from_bits_be(&numbers[0], b'1')
 }
 
 // ======================================================================
