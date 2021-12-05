@@ -38,7 +38,7 @@ fn solve(input: &str) -> usize {
         let y2: isize = cap[4].parse().unwrap();
 
         if x1 == x2 {
-            let dy = if y1 < y2 { 1 } else { -1 };
+            let dy = (y2 - y1).signum();
             let mut y = y1;
             loop {
                 *counts.entry((x1, y)).or_insert(0) += 1;
@@ -50,7 +50,7 @@ fn solve(input: &str) -> usize {
         }
 
         if y1 == y2 {
-            let dx = if x1 < x2 { 1 } else { -1 };
+            let dx = (x2 - x1).signum();
             let mut x = x1;
             loop {
                 *counts.entry((x, y1)).or_insert(0) += 1;
@@ -76,21 +76,8 @@ fn solve_2(input: &str) -> usize {
         let x2: isize = cap[3].parse().unwrap();
         let y2: isize = cap[4].parse().unwrap();
 
-        let dx = if x1 < x2 {
-            1
-        } else if x1 > x2 {
-            -1
-        } else {
-            0
-        };
-
-        let dy = if y1 < y2 {
-            1
-        } else if y1 > y2 {
-            -1
-        } else {
-            0
-        };
+        let dx = (x2 - x1).signum();
+        let dy = (y2 - y1).signum();
 
         let mut x = x1;
         let mut y = y1;
