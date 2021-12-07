@@ -2,3 +2,7 @@
 name = "aoc"
 version = "0.1.0"
 edition = "2021"
+
+[dependencies]
+ndarray = "0.15.4"
+malaire-aoc = { path = "../../malaire-aoc/2021-12-07" }
