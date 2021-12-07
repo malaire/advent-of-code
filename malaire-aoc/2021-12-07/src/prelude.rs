@@ -1,1 +1,1 @@
-pub use crate::{run, util::parse_numbers, ArrayBaseExt, VecExt};
+pub use crate::{parse_numbers, run, ArrayBaseExt, VecExt};
