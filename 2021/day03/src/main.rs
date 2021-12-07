@@ -1,31 +1,29 @@
+use malaire_aoc::run;
+
 static INPUT_A: &str =
     "00100\n11110\n10110\n10111\n10101\n01111\n00111\n11100\n10000\n11001\n00010\n01010";
 static INPUT_X: &str = include_str!("input");
 
 fn main() {
-    assert_eq!(solve(INPUT_A), 198);
-    assert_eq!(solve(INPUT_X), 3882564);
-    println!("{:?}", solve(INPUT_X));
+    run(0, solve_1, INPUT_A, 198);
+    run(1, solve_1, INPUT_X, 3882564);
 
-    assert_eq!(solve_2(INPUT_A), 230);
-    assert_eq!(solve_2(INPUT_X), 3385170);
-    println!("{:?}", solve_2(INPUT_X));
+    run(0, solve_2, INPUT_A, 230);
+    run(2, solve_2, INPUT_X, 3385170);
 }
 
-fn solve(input: &str) -> usize {
-    let mut counts: [(usize, usize); 20] = [(0, 0); 20];
+fn solve_1(input: &str) -> usize {
+    let size = input.lines().next().unwrap().len();
 
-    let mut size = 0;
+    let mut counts = vec![(0, 0); size];
+
     for line in input.lines() {
-        size = line.len();
-        let mut pos = 0;
-        for ch in line.chars() {
+        for (pos, ch) in line.chars().enumerate() {
             match ch {
                 '0' => counts[pos].0 += 1,
                 '1' => counts[pos].1 += 1,
                 _ => panic!(),
             }
-            pos += 1;
         }
     }
 
@@ -53,21 +51,12 @@ fn filter(numbers: &[&str], find_oxygen: bool) -> usize {
             split[bit].push(number.clone());
         }
 
-        let count0 = split[0].len();
-        let count1 = split[1].len();
+        let zero_is_most_common = split[0].len() > split[1].len();
 
-        let wanted_bit = if find_oxygen {
-            if count0 > count1 {
-                0
-            } else {
-                1
-            }
+        let wanted_bit = if find_oxygen ^ zero_is_most_common {
+            1
         } else {
-            if count0 <= count1 {
-                0
-            } else {
-                1
-            }
+            0
         };
 
         numbers = split[wanted_bit].clone();
