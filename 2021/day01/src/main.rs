@@ -1,37 +1,31 @@
+use malaire_aoc::prelude::*;
+
 static INPUT_A: &str = "199\n200\n208\n210\n200\n207\n240\n269\n260\n263";
 static INPUT_X: &str = include_str!("input");
 
 fn main() {
-    assert_eq!(solve(INPUT_A), 7);
-    assert_eq!(solve(INPUT_X), 1553);
-    println!("{:?}", solve(INPUT_X));
+    run(0, solve_1, INPUT_A, 7);
+    run(1, solve_1, INPUT_X, 1553);
 
-    assert_eq!(solve_2(INPUT_A), 5);
-    assert_eq!(solve_2(INPUT_X), 1597);
-    println!("{:?}", solve_2(INPUT_X));
+    run(0, solve_2, INPUT_A, 5);
+    run(2, solve_2, INPUT_X, 1597);
 }
 
-fn solve(input: &str) -> usize {
-    let input: Vec<usize> = input.lines().map(|line| line.parse().unwrap()).collect();
-
-    let mut count = 0;
-    let mut prev = 1_000_000_000;
-    for x in input {
-        if x > prev {
-            count += 1;
-        }
-        prev = x;
-    }
-
-    count
+fn solve_1(input: &str) -> usize {
+    solve_generic(input, 1)
 }
 
 fn solve_2(input: &str) -> usize {
-    let input: Vec<usize> = input.lines().map(|line| line.parse().unwrap()).collect();
+    solve_generic(input, 3)
+}
+
+fn solve_generic(input: &str, delta: usize) -> usize {
+    let input = parse_numbers::<usize>(input);
 
     let mut count = 0;
-    for n in 0..input.len() - 3 {
-        if input[n] < input[n + 3] {
+
+    for n in 0..input.len() - delta {
+        if input[n] < input[n + delta] {
             count += 1;
         }
     }
