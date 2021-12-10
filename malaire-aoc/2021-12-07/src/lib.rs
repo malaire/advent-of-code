@@ -1,4 +1,8 @@
-pub use crate::{array_base_ext::ArrayBaseExt, util::parse_numbers, vec_ext::VecExt};
+pub use crate::{
+    array_base_ext::ArrayBaseExt,
+    util::{parse_numbers, read_byte_array},
+    vec_ext::VecExt,
+};
 
 mod array_base_ext;
 pub mod prelude;

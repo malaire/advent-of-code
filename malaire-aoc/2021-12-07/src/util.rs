@@ -4,6 +4,8 @@ use std::{
     ops::{AddAssign, MulAssign},
 };
 
+use ndarray::{Array2, ArrayView};
+
 // ======================================================================
 // FUNCTIONS
 
@@ -31,6 +33,22 @@ where
     }
 
     numbers
+}
+
+/// Reads data into a byte array, one row per line.
+///
+/// Panics if lines have different lengths.
+pub fn read_byte_array(data: &str) -> Array2<u8> {
+    let col_count = data.lines().next().unwrap().as_bytes().len();
+    let mut array = Array2::zeros((0, col_count));
+    for line in data.lines() {
+        let bytes: Vec<_> = line.bytes().collect();
+        let row = ArrayView::from(&bytes);
+        array
+            .push_row(row)
+            .expect("ERROR: Lines have different lengths");
+    }
+    array
 }
 
 // ======================================================================
