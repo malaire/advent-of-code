@@ -1,11 +1,13 @@
 pub use crate::{
     array_base_ext::ArrayBaseExt,
+    tuple2_ext::Tuple2Ext,
     util::{parse_numbers, read_byte_array},
     vec_ext::VecExt,
 };
 
 mod array_base_ext;
 pub mod prelude;
+mod tuple2_ext;
 mod util;
 mod vec_ext;
 
