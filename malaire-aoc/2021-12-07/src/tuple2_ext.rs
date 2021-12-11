@@ -5,6 +5,11 @@ pub trait Tuple2Ext
 where
     Self: Sized,
 {
+    /// Returns up to 8 neighbours in row-major order.
+    fn neighbours(&self, array_dim: (usize, usize)) -> Vec<Self>;
+
+    fn neighbours_iter(&self, array_dim: (usize, usize)) -> std::vec::IntoIter<(usize, usize)>;
+
     /// Returns up to 4 orthogonal neighbours in row-major order.
     fn neighbours_orthogonal(&self, array_dim: (usize, usize)) -> Vec<Self>;
 
@@ -18,6 +23,48 @@ where
 // Tuple2Ext - IMPL
 
 impl Tuple2Ext for (usize, usize) {
+    fn neighbours(&self, array_dim: (usize, usize)) -> Vec<Self> {
+        let mut neighbours = Vec::with_capacity(8);
+
+        if self.0 > 0 && self.1 > 0 {
+            neighbours.push((self.0 - 1, self.1 - 1));
+        }
+
+        if self.0 > 0 {
+            neighbours.push((self.0 - 1, self.1));
+        }
+
+        if self.0 > 0 && self.1 < array_dim.1 - 1 {
+            neighbours.push((self.0 - 1, self.1 + 1));
+        }
+
+        if self.1 > 0 {
+            neighbours.push((self.0, self.1 - 1));
+        }
+
+        if self.1 < array_dim.1 - 1 {
+            neighbours.push((self.0, self.1 + 1));
+        }
+
+        if self.0 < array_dim.0 - 1 && self.1 > 0 {
+            neighbours.push((self.0 + 1, self.1 - 1));
+        }
+
+        if self.0 < array_dim.0 - 1 {
+            neighbours.push((self.0 + 1, self.1));
+        }
+
+        if self.0 < array_dim.0 - 1 && self.1 < array_dim.1 - 1 {
+            neighbours.push((self.0 + 1, self.1 + 1));
+        }
+
+        neighbours
+    }
+
+    fn neighbours_iter(&self, array_dim: (usize, usize)) -> std::vec::IntoIter<(usize, usize)> {
+        self.neighbours(array_dim).into_iter()
+    }
+
     fn neighbours_orthogonal(&self, array_dim: (usize, usize)) -> Vec<Self> {
         let mut neighbours = Vec::with_capacity(4);
 
@@ -54,6 +101,26 @@ impl Tuple2Ext for (usize, usize) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ============================================================
+    // neighbours
+
+    #[test]
+    fn neighbours_middle() {
+        assert_eq!(
+            (1, 1).neighbours((3, 3)),
+            vec![
+                (0, 0),
+                (0, 1),
+                (0, 2),
+                (1, 0),
+                (1, 2),
+                (2, 0),
+                (2, 1),
+                (2, 2)
+            ]
+        );
+    }
 
     // ============================================================
     // neighbours_orthogonal
