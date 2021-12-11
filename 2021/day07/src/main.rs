@@ -1,4 +1,4 @@
-use malaire_aoc::prelude::*;
+use malaire_aoc::{parse_numbers, run};
 
 static INPUT_A: &str = "16,1,2,0,4,2,7,1,2,14";
 static INPUT_X: &str = include_str!("input");

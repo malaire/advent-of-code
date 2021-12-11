@@ -1,6 +1,6 @@
 use ndarray::Array2;
 
-use malaire_aoc::prelude::*;
+use malaire_aoc::{parse_numbers, run, ArrayBaseExt, VecExt};
 
 static INPUT_A: &str = include_str!("input_a");
 static INPUT_X: &str = include_str!("input");

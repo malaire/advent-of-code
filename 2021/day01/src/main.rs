@@ -1,4 +1,4 @@
-use malaire_aoc::prelude::*;
+use malaire_aoc::{parse_numbers, run};
 
 static INPUT_A: &str = "199\n200\n208\n210\n200\n207\n240\n269\n260\n263";
 static INPUT_X: &str = include_str!("input");
