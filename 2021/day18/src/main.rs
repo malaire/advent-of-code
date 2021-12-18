@@ -22,8 +22,8 @@ fn main() {
 }
 
 // (value, depth)
-type Element = (usize, usize);
-type Pair = Vec<Element>;
+type RegularNumber = (usize, usize);
+type Pair = Vec<RegularNumber>;
 
 fn solve_1(input: &str) -> usize {
     let pairs: Vec<Pair> = input.lines().map(|p| parse_pair(p)).collect();
