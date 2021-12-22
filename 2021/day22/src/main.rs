@@ -23,7 +23,7 @@ fn main() {
     run(0, solve_2, INPUT_B, 39769202357779);
     run(0, solve_2, INPUT_C, 2758514936282235);
 
-    // This is slow, takes 3 min 22 sec on my computer.
+    // This takes 17s on my computer.
     let start = std::time::Instant::now();
     run(2, solve_2, INPUT_X, 1217808640648260);
     println!("Elapsed {} s", start.elapsed().as_secs());
@@ -123,6 +123,22 @@ fn count(min: (i64, i64, i64), max: (i64, i64, i64), steps: &[Step]) -> i64 {
     let mut split_x = [(false, 0i64); 3];
     let mut split_y = [(false, 0i64); 3];
     let mut split_z = [(false, 0i64); 3];
+
+    let mut intersects_with_turn_on_step = false;
+    for step in steps {
+        if step.turn_on
+            && (step.min.0 < max.0 && step.max.0 > min.0)
+            && (step.min.1 < max.1 && step.max.1 > min.1)
+            && (step.min.2 < max.2 && step.max.2 > min.2)
+        {
+            intersects_with_turn_on_step = true;
+            break;
+        }
+    }
+
+    if !intersects_with_turn_on_step {
+        return 0;
+    }
 
     for step_index in 0..steps.len() {
         let step = &steps[step_index];
