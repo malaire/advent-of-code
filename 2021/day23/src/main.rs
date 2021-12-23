@@ -68,6 +68,8 @@ fn solve_generic(pos: &mut [usize], room_size_log: usize) -> usize {
 
         room_size_log,
         amphipod_max_id: room_size * 4 - 1,
+
+        memoized: HashMap::new(),
     };
 
     play(&mut state, usize::MAX).unwrap()
@@ -166,7 +168,7 @@ fn parse_input_2(input: &str) -> [usize; 16] {
 const HALLWAY_MIN_POS: usize = 16;
 const HALLWAY_MAX_POS: usize = HALLWAY_MIN_POS + 6;
 
-const FINISHED_POS: usize = 99;
+const FINISHED_POS: usize = 23;
 
 // ======================================================================
 // TYPES
@@ -194,12 +196,24 @@ struct State<'a> {
 
     room_size_log: usize,
     amphipod_max_id: usize,
+
+    memoized: HashMap<u128, Option<usize>>,
 }
 
 // ======================================================================
 // PLAY
 
 fn play(state: &mut State, mut energy_limit: usize) -> Option<usize> {
+    let mut key = 0u128;
+    for pos in state.pos.iter() {
+        key <<= 5;
+        key += *pos as u128;
+    }
+
+    if let Some(best) = state.memoized.get(&key) {
+        return *best;
+    }
+
     let mut best: Option<usize> = None;
 
     for id in 0..=state.amphipod_max_id {
@@ -252,6 +266,7 @@ fn play(state: &mut State, mut energy_limit: usize) -> Option<usize> {
 
             if state.occupied & via == 0 && steps * cost < energy_limit {
                 if state.finished == state.amphipod_max_id {
+                    state.memoized.insert(key, Some(steps * cost));
                     return Some(steps * cost);
                 } else {
                     state.pos[id] = FINISHED_POS;
@@ -279,6 +294,7 @@ fn play(state: &mut State, mut energy_limit: usize) -> Option<usize> {
         state.pos[id] = pos;
     }
 
+    state.memoized.insert(key, best);
     best
 }
 
